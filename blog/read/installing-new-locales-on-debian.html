@@ -1,0 +1,134 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Installing new locales on Debian :: Blog :: PlanetCJD</title>
+        <meta name="description" content="Because I never remember how to do this, here's the process for installing new locales on Debian. In this case we will be installing a Spanish locale. ">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Installing new locales on Debian</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 9 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>Because I never remember how to do this, here's the process for installing new locales on Debian. In this case we will be installing a Spanish locale.</p>
+
+				<p>Firstly make sure you have the locales package installed, otherwise install it:</p>
+<p><code>sudo apt-get install locales</code></p>
+<p>Confirm the locale isn't already installed with:</p>
+<p><code>locale -a</code></p>
+<p>Add the new local:</p>
+<p><code>sudo local-gen es_ES.UTF-8</code></p>
+<p>If you're using it on a website you need to restart Apache etc. for the new locale to be picked up:</p>
+<p><code>sudo service apache2 restart</code></p>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

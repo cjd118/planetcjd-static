@@ -1,0 +1,316 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Creating an API in PHP - Part 1 :: Blog :: PlanetCJD</title>
+        <meta name="description" content="For a project I'm working on, I need to write a simple API in PHP to fetch data. This is part 1 of the setup of the API in which we discuss Composer and the Symfony HttpFoundation and Routing components.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Creating an API in PHP - Part 1</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 8 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/php">php</a>
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>For a project I'm working on, I need to write a simple API in PHP to fetch data. This is part 1 of the setup of the API in which we discuss Composer and the Symfony HttpFoundation and Routing components.</p>
+
+				<h2>API Requirements</h2>
+<p>Our API has very simple requirements as far as APIs go. We need to be able to provide a variety of endpoint URLs to access data, be able to read from a MySQL database and return that data in a JSON format. Thus we don't need to worry about POSTing data, writing data, handling authentication, rate limiting or any extra tasks.</p>
+<h2>API Design</h2>
+<p>We will keep our API design very simple. My API returns data (the data is not important) for specific dates and can also return overall stats (for all dates), so actually all we need to support that is:</p>
+<p><code>/api/stats</code> - return our generic stats for all dates.</p>
+<p><code>/api/stats/yyyy-mm-dd</code> - return data and stats for a specific date specified in yyyy-mm-dd format.</p>
+<h2>Composer</h2>
+<p>Composer is pretty much the de facto standard in PHP dependency management now. Composer is <a href="https://getcomposer.org/download/">really easy to install</a> so get to it. Once we have composer installed we need to pull in our required third party packages. We need the HttpFoundation component, the Routing component and also the Config component (as that is used within the other components).</p>
+<p>To install all 3 it is as simple as running the below in your working directory:</p>
+<p><code>composer require symfony/config symfony/http-foundation symfony/routing</code>.</p>
+<p>This will create a <code>vendor</code> directory and <code>composer.json</code> and <code>composer.lock</code> files. In the <code>vendor</code> directory, you'll find <code>autoload.php</code> file. This file provides all the magic to autoload the Symfony components as well as our own code (see below and the <a href="http://www.php-fig.org/psr/psr-4/">PSR 4 spec</a>). All we need to do to take advantage of this is to use the proper namespaces and in our API's entry point, <code>index.php</code> add <code>require('./vendor/autoload.php');</code> at the top. Now we can autoload Symfony classes by <code>use</code>ing the namespaces at the top of the file or by providing the full namespace path.</p>
+<pre><code>use Symfony\Component\Routing\Router;
+
+$router = new Router();
+</code></pre>
+<h2>Composer autoloading of our classes</h2>
+<p>The only thing left to do now with Composer is to be able to load our own classes once we write them. We will store our own classes in the <code>app</code> dir under our working directory. Classes are also autoloaded via composer. To do we map a physical directory to a namespace in <code>composer.json</code>. Like so:</p>
+<pre><code>&quot;autoload&quot;: {
+    &quot;psr-4&quot;: {
+        &quot;App\\&quot;:&quot;app/&quot;
+    }
+}  
+</code></pre>
+<p>What is this doing? It says use the PSR 4 autoloader and map the <code>App</code> root namespace to the <code>./app</code> directory. So lets say we have a class called <code>Database</code> in <code>./app/Database.php</code>. Our <code>Database</code> class would be namespaced to <code>App</code> and can be <code>use</code>d via <code>use App\Database</code> in any other file. The works at the subdirectory level too - more on this later.</p>
+<h2>Setting up our <code>App</code> object</h2>
+<p>Lets first create an <code>App</code> object that will be the main handler of our API. <code>App</code> will live in <code>./app/App.php</code> and initial setup is as follows:</p>
+<pre><code>namespace App;
+
+class App
+{
+
+	public function __construct()
+	{
+		echo 'Hi from App constructor';
+	}
+
+}
+</code></pre>
+<p><code>App</code> gets instatiated via <code>index.php</code>:</p>
+<pre><code>require('./vendor/autoload.php');
+
+use App\App;
+
+$app = new App();
+</code></pre>
+<h2>Symfony HttpFoundation component</h2>
+<p>The Symfony HttpFoundation component provides a nice set of classes for us to easily access requests and generate responses. No more messing around with <code>$_SERVER</code> globals and other such variables, by using HttpFoundation we can access everything in an OO fashion.</p>
+<p>The only <code>Request</code> related things we really need to concern ourselves with for now is how to set up the request and get the URL path.</p>
+<p>To set up the <code>Request</code> object we will modify <code>App</code> so it is like so:</p>
+<pre><code>&lt;?php
+
+namespace App;
+
+use Symfony\Component\HttpFoundation\Request;
+
+class App
+{
+	private $request;
+
+	public function __construct()
+	{
+		$this-&gt;request = Request::createFromGlobals();
+	}
+
+	public function getRequest()
+	{
+		return $this-&gt;request;
+	}
+	
+}
+</code></pre>
+<p>As you can see we keep <code>App::$request</code> private and use a getter to access it. We assign it on object creation, <code>createFromGlobals</code> initalises the <code>Request</code> object with data from <code>$_SERVER</code> etc.</p>
+<p>Now we have our <code>Request</code> object initalised, we can use <code>getPathInfo()</code> to 'return the path being requested relative to the executed script'.</p>
+<pre><code>echo $this-&gt;request-&gt;getPathInfo();
+</code></pre>
+<p>Why do we need this? Well for the <code>Router</code> component of course!</p>
+<h2>Symfony Routing component</h2>
+<p>The routing component enables us to route an HTTP request to a specific method/class/function for our API. The routing component will be especially useful for us as you can map placeholders as you will see below.</p>
+<p>We're going to do something a bit different to HttpFoundation component here and wrap the Symfony Router in our own <code>ApiRouter</code> class. There is a bit of boilerplate in setting up the <code>Router</code> object and there is no reason to clutter up <code>App</code> with that.</p>
+<p>Here's our <code>./app/ApiRouter.php</code> class in all its glory:</p>
+<pre><code>&lt;?php
+
+namespace App;
+
+use Symfony\Component\Routing\Router;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\Loader\PhpFileLoader;
+use Symfony\Component\Config\FileLocator;
+
+class ApiRouter
+{
+	private $router;
+
+	public function __construct($request)
+	{
+		$context = new RequestContext();
+		$context-&gt;fromRequest($request);
+
+		$routesLocator = new FileLocator(array(__DIR__));
+		$this-&gt;router = new Router(
+			new PhpFileLoader($routesLocator),
+			'routes.php',
+			array('cache_dir' =&gt; null),
+			$context
+		);
+	}
+
+	public function match($url)
+	{
+		return $this-&gt;router-&gt;match($url);
+	}
+}
+</code></pre>
+<p>As you can see we need to use a few different namespace imports to load in all the required classes for <code>Router</code>. <code>Router</code> itself by the way is a convenience class to more easily use the component. The Symfony <code>Router</code> object requires a <code>Loader</code>, a loader filename, an array of options and a context. The <code>ApiRouter</code> itself takes the <code>Request</code> object as a parameter so it can build the context for the <code>Router</code>.  We will store our routes in PHP code in a separate PHP file, <code>routes.php</code>. We also wrap the <code>match</code> method so we can call it directly from <code>ApiRouter</code>.</p>
+<p>Here's our <code>routes.php</code> file:</p>
+<pre><code>&lt;?php
+
+use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Routing\Route;
+
+$collection = new RouteCollection();
+
+//stats
+$collection-&gt;add(
+	'stats', 
+	new Route('/stats', array('_controller'=&gt;'Stats'))
+);
+
+//stats by date
+$collection-&gt;add(
+	'stats_date',
+	new Route(
+		'/stats/{date}', 
+		array('_controller'=&gt;'Stats'),
+		array('date' =&gt; '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+	)
+);
+
+return $collection;
+</code></pre>
+<p>This file creates a new <code>RouteCollection</code> and adds two <code>Route</code>s. The first is our <code>/stats</code> route and the second is our <code>/stats/{date}</code> route. You will see the second has a wildcard and also a third parameter that specifics a regex the wildcard should conform too. This is really powerful as the router will throw an exception if the route does not match exactly. Our date in the URL must conform to <code>NNNN-NN-NN</code>. Our routes file then returns the <code>RouteCollection</code> object.</p>
+<h2>Matching and Responses</h2>
+<p>Now we have routing sorted we need to add it to our <code>App</code> object. Create a new <code>private</code> variable, <code>$router</code>, and in the <code>_construct()</code> add:</p>
+<pre><code>$this-&gt;router = new ApiRouter($this-&gt;request);
+</code></pre>
+<p>and create a new getter:</p>
+<pre><code>public function getRouter()
+{
+	return $this-&gt;router;
+}
+</code></pre>
+<p>Now we can look to add another new method, <code>handleRequest()</code> to <code>App</code> which will do the routing:</p>
+<pre><code>public function handleRequest()
+{
+	try {
+		$this-&gt;getRouter()-&gt;match( $this-&gt;getRequest()-&gt;getPathInfo() );
+		echo 'The route matched!';
+	} catch (\Symfony\Component\Routing\Exception\ResourceNotFoundException $e) {
+		$this-&gt;getResponse()-&gt;setStatusCode(404);
+		$this-&gt;getResponse()-&gt;setContent('Not found');
+		$this-&gt;getResponse()-&gt;send();
+	} catch (\Symfony\Component\Routing\Exception\MethodNotAllowedException $e) {
+		$this-&gt;getResponse()-&gt;setStatusCode(404);
+		$this-&gt;getResponse()-&gt;setContent('Method not allowed');
+		$this-&gt;getResponse()-&gt;send();
+	}
+}
+</code></pre>
+<p><code>$this-&gt;router-&gt;match( $this-&gt;request-&gt;getPathInfo() )</code> attempts to match a route to a route in our <code>routes.php</code> file. If it matches we get <code>The route matched!</code>. If it doesn't, the <code>Routing</code> component throws an exception. We catch those exceptions and throw a <code>404</code> response. To do so is really easy. You can see we are using the <code>Response</code> object from HttpFoundation and using the <code>setStatusCode()</code> method on it. However we haven't set up <code>Response</code> yet, so let’s do that now!</p>
+<p>Add <code>$response</code> private variable to <code>App</code> and initalise it in the constructor: <code>$this-&gt;response = new Response();</code>. And add the getter:</p>
+<pre><code>public function getResponse()
+{
+	return $this-&gt;response;
+}
+</code></pre>
+<h2>.htaccess</h2>
+<p>One more thing, now that we have handled routing we need to create an <code>.htaccess</code> file to route all requests (except for files and directories) though <code>index.php</code>. We can do that like so:</p>
+<pre><code>RewriteEngine on
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /api/index.php?p=$1 [NC,L,QSA]
+</code></pre>
+<h2>What's next?</h2>
+<p>Next time we will look at mapping our API requests to specific objects so they do something and then connecting to and querying MySQL.</p>
+<h2>Further reading</h2>
+<p><a href="https://getcomposer.org/">Composer</a></p>
+<p><a href="https://symfony.com/doc/current/components/http_foundation">HttpFoundation component</a></p>
+<p><a href="https://symfony.com/doc/current/components/routing">Routing component</a></p>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

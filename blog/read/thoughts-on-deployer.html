@@ -1,0 +1,159 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Thoughts on Deployer :: Blog :: PlanetCJD</title>
+        <meta name="description" content="I have started to use [Deployer](http://deployer.org/) a task runner/deployment tool written in PHP for deploying my site in a single command. ">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Thoughts on Deployer</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 9 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/php">php</a>
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>I have started to use <a href="http://deployer.org/">Deployer</a> a task runner/deployment tool written in PHP for deploying my site in a single command.</p>
+
+				<h2>Installation</h2>
+<p>The best way to use Deployer is to forward your SSH keys using the forwardAgent option. This way you don't have any private keys left on the server incase it gets compromised. You need to ensure you are forwarding both the key to access your server remotely and (if separate) the key to access GitHub remotely. To keep things simple, I just set up a new private key and used the same one for both:</p>
+<p>Generate a new ssh key, add it to ssh-agent, add public key to Github and your server:</p>
+<pre><code class="language-php">ssh-keygen -t rsa -b 4096 -C &quot;email&quot;
+ssh-copy-id you@host
+eval &quot;$(ssh-agent -s)&quot;
+ssh-add ~/.ssh/id_rsa
+</code></pre>
+<p>There is already a good guide on how to set this up on <a href="https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/">GitHub</a>, and specifically for configurating forward agent, <a href="https://github.com/oanhnn/deployer-example/blob/master/docs/enable-feature-ssh-forward-agent.md">here</a>.</p>
+<p>Deployer still seems a little rough around the edges in a couple of instances:</p>
+<p>The main problem I had was trying to install and run it via composer. It redefines set() which is a Laravel function and this causes then issues. The easiest solution is to download the deployer.phar and put it in /usr/local/bin instead. Apparently 4.x, currently in dev, actually uses namespaces so this should be fixed.</p>
+<p>Unfortunately Deployer's documentation is not great. There is no real reference guide, there are just code samples scattered across vaugely grouped together help pages. The easiest way to get a feel for what's going on is to look at one of the recipies, for example the Laravel one.</p>
+<h2>Customisations</h2>
+<p>I've done a couple of little tweaks. The Laravel receipe does not run migrations by default. This is configured as a separate task. However I'd prefer to always run migrations on deploy, if there are any. This is easy to do by adding this to the bottom of your deploy.php:</p>
+<pre><code class="language-php">after('deploy', 'artisan:migrate');
+after('rollback', 'artisan:migrate:rollback');
+</code></pre>
+<p>One other thing I've had to do is create a quick task to generate a symlink from storage/app to public/storage so that stored files are publically accessible. The new Laravel 5.3 release has an Artisan command to create this symlink but 5.2, which I'm currently using, does not. So here is the simple deployer task:</p>
+<pre><code class="language-php">task('laravel:symlink', function(){
+	run('ln -s ../storage/app current/public/storage');
+});
+</code></pre>
+<p>You can then run this task separately after deploying - it should only need to be run once:</p>
+<pre><code class="language-php">dep laravel:symlink production
+</code></pre>
+<h2>Final thoughts</h2>
+<p>Generally Deployer is quite nice but I think it would only really pay off if you a) have to deploy to multiple servers concurrently b) have many stages of deployment (testing, staging, production etc.) c) have a regular need to quickly rollback broken releases. I think for a simple site such as this using Git would suffice.</p>
+<p>Regardless I will continue to use Deployer so stay tuned for more blogs posts as there's a bunch of things still to try and work out:</p>
+<ul>
+<li>The best way of using ssh agent to forward the ssh keys</li>
+<li>Hooking pushes to master to automatically run Deployer</li>
+</ul>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

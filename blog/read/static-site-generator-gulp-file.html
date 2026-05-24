@@ -1,0 +1,184 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Static site generator gulp file :: Blog :: PlanetCJD</title>
+        <meta name="description" content="I have built a few static sites recently and one of the quickest ways to get them going is to take advantage of gulp, handlebars and npm, and roll your own simple static site generator. Handlebars is powerful enough to support the idea of layouts and makes it easy to build sites in a structured way without code repetition. By using gulp we can also easily take advantage of using sass, imagemin, js minification and more.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Static site generator gulp file</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 8 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>I have built a few static sites recently and one of the quickest ways to get them going is to take advantage of gulp, handlebars and npm, and roll your own simple static site generator. Handlebars is powerful enough to support the idea of layouts and makes it easy to build sites in a structured way without code repetition. By using gulp we can also easily take advantage of using sass, imagemin, js minification and more.</p>
+
+				<h2>Handlebars templating</h2>
+<p>Handlebars is an easy to learn Javascript-based templating engine to help with building static sites. In Handlebars we will pass <code>{{ variables }}</code> to our view files and we might need to use the odd <code>{{#if}} {{/if}}</code> statement too. The real magic is in the layout/partial logic though. You might think you need to extend Handlebars for this, as I did, but thanks to <a href="https://cloudfour.com/thinks/the-hidden-power-of-handlebars-partials/">this fantastic guide</a> you can see it is possible to handle it natively. In summary, the inline partial block does all the heavy lifting.</p>
+<p>We can create a <code>defaultLayout.hbs</code> layout (just a regular partial), an <code>index.hbs</code> page (just a regular partial) and a <code>hero.hbs</code> panel (again just a regular partial). Our <code>default layout</code> might look like:</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;meta charset=&quot;utf-8&quot;&gt;
+	&lt;title&gt;{{ page-title }}&lt;/title&gt;
+        &lt;meta name=&quot;description&quot; content=&quot;{{ meta-description }}&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+	{{&gt; content }}
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p>Our <code>index</code> page:</p>
+<pre><code>{{#&gt; defaultLayout 
+	page-title=&quot;My index page&quot; 
+	meta-description=&quot;My meta description&quot; 
+}}
+	{{#*inline &quot;content&quot;}}
+		{{&gt; hero }}
+	{{/inline}}
+{{/defaultLayout}}
+</code></pre>
+<p>And the <code>hero</code> panel partial:</p>
+<pre><code>&lt;div class=&quot;hero&quot;&gt;HERO&lt;/div&gt;
+</code></pre>
+<p>As you can see we can define variables in the layout and set them on the actual page partial (<code>title</code>, <code>meta-description</code>). The page partial itself can pull in any number of partials in to any number of defined content blocks. We only have one, <code>content</code>, but we could also have <code>header</code> and <code>footer</code> etc. We could pass variables through to each partial if we wanted, like so:</p>
+<p><code>{{&gt; hero type=&quot;full-height&quot; }}</code></p>
+<p>A suggested folder structure for this set up would be <code>/layouts</code>, <code>/pages</code> and <code>/partials</code> respectively. You could use sub folders for larger sites within these. We can compile these templates in gulp - discussed later.</p>
+<h2>SASS</h2>
+<p>If we're using a task runner for compiling Handlebars templates, we might as well take advantage of SASS too. In my setup we have a <code>main.scss</code> file that will <code>@import</code> all the SASS partials.</p>
+<p>We can include third party files (managed via NPM - see below) in one of two ways. By including the path in the <code>includePaths</code> parameter on the sass object within our gulp file, like so:</p>
+<p><code>includePaths: ['./src/scss','./node_modules/bootstrap-sass/assets/stylesheets']</code></p>
+<p>This includes the path to Bootstrap so in our <code>main.scss</code> file we can just <code>@import 'bootstrap';</code>.</p>
+<p>Alternatively, we can specify the relative path in the <code>main.scss</code> file: <code>@import '../../node_modules/animate.css/animate.min';</code>.</p>
+<p>You'd want to use the former where the imported file also imports further files and use the later where the imported file is self contained.</p>
+<p>I also use <a href="https://github.com/postcss/autoprefixer">autoprefixer</a> and <a href="http://cssnano.co/">cssnano</a> to optimise the outputted CSS. The final CSS file gets outputted to <code>./dist/css</code> so you can just <code>link</code> that in the layout file.</p>
+<h2>JS</h2>
+<p>It's a similar story with JS although the third party dependencies are loaded a little differently. The <code>gulp.src</code> object is used with an array of all the required JS files. Once all the JS is loaded, the gulp file concatenates it, uglifys (minimises) it and spits it out in <code>./dist/js</code>.</p>
+<h2>ImageMin</h2>
+<p>The gulpfile also uses imagemin to optimise image filesize without reducing quality. Images are by default placed in <code>./src/images/</code>, get optimised and outputted to <code>./dist/images</code>. Note that this task doesn't run automatically so you need to run <code>gulp imagemin</code> to start it.</p>
+<h2>Watching</h2>
+<p>After running <code>gulp watch</code>, all <code>.src/scss/*.scss</code> files, <code>./src/js/script.js</code> and all <code>./src/*/*.hbs</code> files will get automatically compiled when they are modified.</p>
+<h2>NPM</h2>
+<p>As mentioned, I use NPM to manage the gulp dependencies and also all the project's CSS and JS third party dependencies. Typically these would all be <code>devDependencies</code> as we don't want to keep gulp related dependencies and everything else we bundled everything up into the final source files. A quick reminder on NPM:</p>
+<p><code>npm install --save-dev bootstrap-sass</code> would install <code>bootstrap-sass</code> into <code>node_modules</code> and write to the <code>devDependencies</code> in <code>package.json</code>. We can then load this via SCSS or gulp.</p>
+<p>We can also install specific versions, <code>npm install bootstrap-sass@3.3.7</code> or opt to choose the latest version but always use only that version, <code>npm install --save-exact bootstrap-sass</code>.</p>
+<h2>Production mode</h2>
+<p>The <code>scss</code> and <code>js</code> files get source mapped by default so that you can more easily inspect the original SASS and JS in the browser when building the site. Obviously this isn't required in production and it dramatically increases file size. So <code>gulp --production</code> recompiles all files without any source maps.</p>
+<h2>The completed gulpfile and the dependencies</h2>
+<p>To install the gulpfile depdendencies:</p>
+<p><code>npm install --save-dev gulp gulp-autoprefixer gulp-compile-handlebars gulp-concat gulp-cssnano gulp-if gulp-imagemin gulp-rename gulp-sass gulp-sourcemaps gulp-uglify gulp-util</code></p>
+<p>And the complete gulpfile:</p>
+<script src="https://gist.github.com/cjd118/944e14cf5a2013a66774d35dc59c957a.js"></script>
+<h2>Things for the future</h2>
+<p>Of course, there are loads of extra things that could be added to this in time, such as <a href="https://github.com/giakki/uncss">uncss</a> to remove unused CSS styles. It is also not currently using BrowserSync as I was having some issues with it. To be continued ...</p>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

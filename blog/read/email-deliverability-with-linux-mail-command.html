@@ -1,0 +1,161 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Email deliverability with Linux mail command :: Blog :: PlanetCJD</title>
+        <meta name="description" content="Everyone knows getting emails to land in inboxes is much harder than it used to be. If, like me, you rely on using the `mail` command to send emails from cron jobs and scripts, mainly to alert to failures, it is important those emails end up in your inbox and not in spam. Today lets take a look at ways to achieve this. ">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Email deliverability with Linux mail command</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 8 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>Everyone knows getting emails to land in inboxes is much harder than it used to be. If, like me, you rely on using the <code>mail</code> command to send emails from cron jobs and scripts, mainly to alert to failures, it is important those emails end up in your inbox and not in spam. Today lets take a look at ways to achieve this.</p>
+
+				<h2>SPF</h2>
+<p>An SPF record is a TXT record on your domain that says 'hey, these ip addresses can send email from this domain'. If your root domain A record points to the same place as your sending mail server, the SPF record is very simple:</p>
+<p><code>example.org. IN TXT &quot;v=spf1 a ~all&quot;</code></p>
+<p>We simply say allow the root record for the domain to be approved and soft fail on any other sender IP. There are obviously many more configuration options available but that is all needed for our current purposes.</p>
+<p>I encourage you to use <a href="https://www.spfwizard.net/">SPF Wizard</a> to help configure your own SPF record.</p>
+<h2>DKIM</h2>
+<p>DKIM (DomainKey Identified Mail) uses keys to verify the sender of an email. The private key remains on the sending server and the public key is added as a TXT record to the domain. We are going to set up DKIM to work with <code>sendmail</code> MTA (Mail Transfer Agent) which is the default on Debian based distributions.</p>
+<p>Mostly, you should follow <a href="https://philio.me/setting-up-dkim-with-sendmail-on-ubuntu-14-04/">this tutorial</a>.</p>
+<p>I'm not going to reproduce it word for word here but I will say, as per the comments on the linked tutorial, I had to set <code>/etc/opendkim</code> folder and its contents to be owned by <code>opendkim.opendkim</code> before it worked. Prior to this I was seeing <code>Connection refused by localhost</code> errors.</p>
+<h2>Reverse DNS</h2>
+<p>Reverse DNS associates an IP address with a domain name. Email providers look at the configured rDNS as an anti-spam measure. You should ensure your IPv4 and IPv6 rDNS point to your sending domain. This is usually configured in your hosting/server provider's control panel.</p>
+<p>I wrote a bit about <a href="google-this-message-does-not-meet-ipv6-sending-guidelines">adding rDNS for IPv6</a> recently.</p>
+<h2>Configure sending server's domain</h2>
+<p>By default you may find that mail gets sent from a local domain, such as <code>@localhost.localdomain</code>. You can determine your default mail sending domain by running <code>hostname --fqdn</code>. Sendmail uses this as the default sending address. To change it:</p>
+<p>To edit your hostname and FQDN,</p>
+<p><code>sudo nano /etc/hostname</code></p>
+<p>and replace with your correct hostname.</p>
+<p><code>sudo hostname [hostname]</code></p>
+<p>for good measure (should change hostname immediately).</p>
+<p><code>sudo nano /etc/hosts</code></p>
+<p>Add your new FQDN and hostname in hosts. Mine ends up looking like:</p>
+<pre><code>127.0.0.1 localhost.localdomain localhost
+x.x.x.x hostname.fully.qualified hostname
+</code></pre>
+<h4>An important note for OpenVZ</h4>
+<p>Actually for my OpenVZ VPS with RamNode would overwrite <code>/etc/hosts</code> every reboot. You have to change the hostname in the VM control panel. This may affect KVM, xen and other virtual guests too, not sure.</p>
+<h2>Whitelist your sending address</h2>
+<p>After adding all these anti-spam methods I was still having issues with email going to spam on Gmail. My conclusion was that previous messages (without these anti-spam methods) were marked as spam, so the sender remained listed as a spam sender. On Gmail to mark a message as not spam, you just have to drag it back into your inbox. Upon doing this the emails started getting delivered directly to the inbox.</p>
+<h2>If all else fails...</h2>
+<p>Firstly, check if your IP is on any blacklist. If it's a newish remote machine, the previous user might have used that IP to spam. These are two popular blacklist checkers: <a href="https://mxtoolbox.com/blacklists.aspx">MXToolBox</a> and  <a href="http://multirbl.valli.org/">multibl</a>.</p>
+<p>The big providers usually have a web form for reporting deliverability issues. It is often a case of not having enough reputation in their system and, in my experience, they usually give senders the benefit of the doubt and allow you through. Obviously you only need to report issues for the provider you are trying to get emails sent to.</p>
+<p><a href="https://support.google.com/mail/contact/msgdelivery">Google report</a></p>
+<p><a href="https://sender.office.com/">Microsoft report</a></p>
+<h2>What about DMARC?</h2>
+<p>DMARC is another anti-spam technique that allows you to say what you want to happen to delivered emails that fail SPF/DKIM. We won't bother with it in this case because it is generally recommended you configure it to receive reports on sent email and our setup doesn't allow remote senders to email us.</p>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

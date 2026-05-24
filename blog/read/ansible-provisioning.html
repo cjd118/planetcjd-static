@@ -1,0 +1,269 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Ansible provisioning :: Blog :: PlanetCJD</title>
+        <meta name="description" content="Ansible is a great, simple to use tool for managing servers. Here's my provisioning script that can be used across Debian dedicated and virtual servers. It does a lot of the standard things like setting up the firewall, creating a non-root user and copying across SSH keys.
+">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Ansible provisioning</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 8 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>Ansible is a great, simple to use tool for managing servers. Here's my provisioning script that can be used across Debian dedicated and virtual servers. It does a lot of the standard things like setting up the firewall, creating a non-root user and copying across SSH keys.</p>
+
+				<h2>Initial setup</h2>
+<p>Firstly, I'm briefly going to go over setting up the machine that will issue the Ansible commands. I'll be using Debian as the command host.</p>
+<p>Don't install Ansible directly via <code>apt</code> as you may end up with a really old version. I ended up with 1.5.4.</p>
+<p>Instead add the ppa, as per the Ansible docs:</p>
+<pre><code>sudo apt-get update
+sudo apt-get install software-properties-common
+sudo apt-add-repository ppa:ansible/ansible
+sudo apt-get update
+sudo apt-get install ansible
+</code></pre>
+<p>Create an SSH key for Ansible SSH connections: <code>ssh-keygen -t rsa -b 4096 -C &quot;your_email@example.com&quot;</code></p>
+<p>Add the public key to the remote host(s): <code>ssh-copy-id -i ansible [-p x] user@host</code></p>
+<h2>Hosts</h2>
+<p>Kinda confusingly <code>host</code> files in Ansible refer to the clients Ansible playbooks run on. Anyway, by default the <code>/etc/ansible/hosts</code> file is used, but for our provisioning script we will define a separate host file with a single group and pass it to <code>ansible-playbook</code> via the <code>-i</code> arg.</p>
+<p>In my case I need to use a slightly more verbose synax as I have multiple hosts under one IP address, so it looks as follows:</p>
+<pre><code>[provisioning]
+testct1 ansible_ssh_port=x ansible_ssh_host=host.dns.name
+testct2 ansible_ssh_port=x ansible_ssh_host=host.dns.name
+
+[provisioning:vars]
+ansible_ssh_private_key_file=~/.ssh/ansible
+</code></pre>
+<h3>About adding hosts to source control</h3>
+<p>You don't really want to add your <code>hosts</code> file to source control (at least not a public one) so I exclude <code>hosts</code> via a <code>.gitignore</code> but I also create a <code>hosts.template</code> to remind myself, and potentially others using the playbook, what it requires.</p>
+<h2>About the provisioning script</h2>
+<p>The provisioning script will take care of the following:</p>
+<ul>
+<li>Running package updates and upgrades</li>
+<li>Installing a number of default packages</li>
+<li>Setting up iptables with a default inbound ruleset only allowing port 22</li>
+<li>Creating a non-root user and adding their public key</li>
+<li>Setting up dotfiles for the new user</li>
+</ul>
+<p>Ansible playbooks are recommended to be idempotent (running the playbook once or repeatedly will return the same results) so because of this, we have to do a bit of extra work with checking whether certain things are already done or not.</p>
+<h2>The provisioing script</h2>
+<pre><code>---
+- hosts: provisioning
+  remote_user: root
+
+  tasks:
+  - name: run apt-get update and upgrade
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+      upgrade: safe
+
+  - name: check to see if the prevention of autosaving iptables-persistent rules has already run
+    shell: debconf-show iptables-persistent
+    register: iptables_no_autosave_check
+    changed_when: false
+
+  - name: prevent autosave of existing iptables rules when installing iptables-persistent
+    shell: echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections &amp;&amp; iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections
+    when: iptables_no_autosave_check.stdout == &quot;&quot;
+
+  - name: install packages
+    apt:
+      name: &quot;{{ item }}&quot;
+    with_items: &quot;{{ PACKAGES }}&quot;
+
+  - name: check if iptables rules already copied
+    stat:
+      path: /etc/iptables/rules.v4
+    register: iptables_rules_exist_check
+
+  - name: copy iptables rules
+    copy:
+      src: ./files/iptables-rules.txt
+      dest: /etc/iptables/rules.v4
+    when: iptables_rules_exist_check.stat.exists == False or iptables_rules_exist_check.stat.size == 0
+
+  - name: apply iptables rules now
+    shell: iptables-restore &lt; /etc/iptables/rules.v4
+    when: iptables_rules_exist_check.stat.exists == False or iptables_rules_exist_check.stat.size == 0
+
+  - name: create new user
+    user:
+      name: &quot;{{ USERNAME }}&quot;
+      password: &quot;{{ PASSWORD }}&quot;
+      shell: /bin/bash
+      update_password: on_create
+      groups: &quot;sudo&quot;
+      append: yes
+
+  - name: add ssh keys for new user
+    authorized_key:
+      user: &quot;{{ USERNAME }}&quot;
+      key: &quot;{{ lookup('file', item) }}&quot;
+    with_items: &quot;{{ PUBLIC_KEYS }}&quot;
+
+  - name: check if dotfiles are already cloned
+    stat:
+      path: /home/{{ USERNAME }}/dotfiles
+    register: dotfiles_exist_check
+
+  - name: git clone dotfiles
+    git:
+      repo: &quot;{{ DOTFILES_REPO }}&quot;
+      dest: /home/{{ USERNAME }}/dotfiles
+    become: true
+    become_user: &quot;{{ USERNAME }}&quot;
+    when: dotfiles_exist_check.stat.exists == False
+
+  - name: install dotfiles
+    shell: /home/{{ USERNAME }}/dotfiles/install.sh
+    become: true
+    become_user: &quot;{{ USERNAME }}&quot;
+    when: dotfiles_exist_check.stat.exists == False
+
+</code></pre>
+<p>Also available on <a href="https://github.com/cjd118/ansible-playbooks">GitHub</a>.</p>
+<h2>Some explanation</h2>
+<p>One good thing with Ansible is that most tasks are self-explanatory. The only thing is a little weird is all the iptables checks that are in place. We use <code>iptables-persistent</code> to restore iptables rules on reboot but when we run the playbook, we don't want to overwrite iptables rules if they've already been set up. So we check if <code>rules.v4</code> (part of <code>iptables-persistent</code>) exists and whether its empty. If it doesn't exist or is empty then the default rules get copied across in a separate task.</p>
+<p>An extra complication is that when installing <code>iptables-persistent</code> it autosaves your existing rules. This means on initial run <code>rules.v4</code> isn't actually empty! If you installed interactively you can choose whether to do this or not but you can't do that when installing via Ansible. To get around this we preset the configuration option that enables autosaving to false. We also have a task to check if this option has already been set so we don't run it everytime.</p>
+<p>Eventually it may make sense to put iptables related tasks into their own include file or even their own role as it does make the playbook a little messy.</p>
+<p>One other thing to note, I have <code>ca-certificates</code> as a package which probably shouldn't be there. I was having issues downloading anything over SSL and updating the trusted certificates seemed to fix it. I need to look further into why that was happening though.</p>
+<h2>Storing passwords and other sensitive data</h2>
+<p>You don't want to store your passwords in plaintext and indeed if you use the <code>user</code> module, you have to provide a sha512 hash anyway. But even storing that unencrypted is a Bad Idea, espeically if you're going to publish your playbooks via source control.</p>
+<p>So let's look at one way to do this using Ansible Vault.</p>
+<p>We're going to take advantage of the <code>group_vars</code> paradigm and further split our variables down into two files - one encrypted, one not. Incidentally, this is about to be a concise version of <a href="https://www.digitalocean.com/community/tutorials/how-to-use-vault-to-protect-sensitive-ansible-data-on-ubuntu-16-04">this</a> very useful tutorial on DigitalOcean.</p>
+<p>We want a <code>group_vars</code> directory structure as follows:</p>
+<pre><code>d group_vars
+    d provisioning
+        f vars
+        f vault
+</code></pre>
+<p>I'm assuming the <code>group</code> is <code>provisioning</code> obviously. Anyway <code>vars</code> holds all your non-encrypted vars AND a reference to the encrypted ones. E.g.</p>
+<pre><code>---
+USERNAME: &quot;BOB&quot;
+PASSWORD: &quot;{{ VAULT_PASSWORD }}&quot;
+</code></pre>
+<p>Why a reference? Well it makes sense if you ever need to go <code>grep</code>ing for those variables. They won't show up in the encrypted version.</p>
+<p>Our non-encrypted <code>vault</code> file would look as follows:</p>
+<pre><code>---
+VAULT_PASSWORD: [sha hash here]
+</code></pre>
+<p>Incidentally, to generate the hash run <code>mkpasswd --method=sha-512</code>.</p>
+<p>Once you've finished editing <code>vault</code>, you can encrypt it by running: <code>ansible-vault encrypt vault</code>. This will replace <code>vault</code> with an encrypted version. As it's encrypted it is up to you whether you want to put this in source control or not. I've decided against it so have added <code>vault</code> to a <code>.gitignore</code> file. I also created a <code>vault.template</code> which IS added to source control to remind me what goes in this file.</p>
+<p>Now if you wanted to you could store your Vault encrypting password in a file (and exclude it from source control too) but that would kind of defeat the purpose of encrypting our user's password in the first place. So instead, we will just ask Ansible to ask us for the Vault password when we run the playbook. Like so:</p>
+<p><code>ansible-playbook generic_provisioning.yml -i hosts --ask-vault-pass</code></p>
+<h2>Things for the future</h2>
+<p>The main thing I am looking to add next is installation and configuration of <code>unattended-upgrades</code>. I may also consider splitting out some of the functionality into roles. I'd also want to test on more cloud providers, I have only tested on DO and my own server so far.</p>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

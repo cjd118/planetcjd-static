@@ -1,0 +1,149 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Managing dotfiles in git :: Blog :: PlanetCJD</title>
+        <meta name="description" content="As I continue [my attempt to learn vim](https://planetcjd.co.uk/blog/read/vim-key-keys), I thought it was also time to put my common dotfiles in git so it is easier to transfer the configuration from machine to machine. ">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Managing dotfiles in git</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 9 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>As I continue <a href="vim-key-keys">my attempt to learn vim</a>, I thought it was also time to put my common dotfiles in git so it is easier to transfer the configuration from machine to machine.</p>
+
+				<p>There is already an <a href="https://dotfiles.github.io/">excellent resource</a> on using dotfiles with git(hub) but after going through most of the links I was suffering from major information overload so decided to base my own dotfile git config mainly on <a href="https://github.com/paulmillr/dotfiles">this one</a> by paulmillr. The basic idea is you have your dotfiles outside your profile root and symlink them in. This is the bash script I'm using to do this (note: it does overwrite existing files):</p>
+<script src="https://gist.github.com/cjd118/63574609526a6156cf41d6adbb07f390.js"></script>
+<p>The dotfiles repo also takes advantage of submodules to pull in vim plugins. This is my first experience of submodules but for this basic usage they seem fine. A couple of things to remember though are a) you need to use the <code>--recursive</code> flag when cloning to pull through the submodules. If you forget to do this and pull through the repo on a new machine, you need to run <code>git submodule update --init --recursive</code>. New submodules need to be added from the root of the git repo: <code>git submodule add &lt;repo-url&gt; &lt;repo location&gt;</code>.</p>
+<p>The dotfiles themselves are all basic for now:</p>
+<p><strong>.bash_aliases</strong> - loads up my alias. There are not too many for now but I plan to add them manually as and when I require them rather than import a long list I never use</p>
+<p><strong>.bash_profile</strong> - is the default Debian one</p>
+<p><strong>.bash_prompt</strong> - outputs the prompt with the current user and hot, the working directory, and if a git branch exists, the name of it and whether there are any changes</p>
+<p><strong>.bash_rc</strong> - is essentially the default Debian one with a few bits removed that are now loaded in else where</p>
+<p><strong>.gitconfig</strong> - git config and aliases</p>
+<p><strong>.gitignore</strong> - global git ignores</p>
+<p><strong>.vimrc</strong> - my newbie-level vim config</p>
+<p>Future things to do include adding more Mac OSX specific bits and pieces and looking at the possiblility of merging in sensitive stuff from a private repo.</p>
+<p>Here's some other resources I found which are useful reads whilst looking at this:</p>
+<ul>
+<li>
+<a href="https://github.com/alebcay/awesome-shell">Awesome Shell</a> - a curated list of shell frameworks and things</li>
+<li>
+<a href="https://github.com/riobard/bash-powerline">bash-powerline</a> - a nice looking bash prompt with some git features</li>
+<li>
+<a href="http://www.joshstaiger.org/archives/2005/07/bash_profile_vs">bashrc or bash_profile?</a> - because it is a bit confusing</li>
+<li>
+<a href="http://www.slideshare.net/jaguardesignstudio/why-zsh-is-cooler-than-your-shell-16194692">zsh slides</a> - why I should probably just give in and switch to zsh.</li>
+</ul>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>

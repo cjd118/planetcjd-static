@@ -1,0 +1,230 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Vim: Key Keys :: Blog :: PlanetCJD</title>
+        <meta name="description" content="For better or worse, I am making a significant effort to learn vim. No more shall I reach for the mouse to change some text or add a bracket! Ultimately my goal is not to necessarily stick with vim, but to be familar enough with its shortcuts to be able to switch to vim mode in another editor - perhaps Sublime. Perhaps even Visual Studio Code. Below are my notes on key keys, I plan to add to this as I learn new features of vim. I am also reading [vim for humans](http://vimebook.com), it focuses on making vim usable rather than teaching you the intricies and it is a good read if you want to be productive from the get-go. Along with this I did vimtutor which is a useful primer on vim shortcuts.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="icon" type="image/png" href="../../favicon.png" />
+        <link rel="stylesheet" href="../../css/app.css">
+		<link href='https://fonts.googleapis.com/css?family=Press+Start+2P' rel='stylesheet' type='text/css'>        
+		<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+        <script type="text/javascript">
+              var _gaq = _gaq || [];
+              _gaq.push(['_setAccount', 'UA-13288916-1']);
+              _gaq.push(['_trackPageview']);
+
+              (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+              })();
+         </script>	
+    </head>
+    <body>
+
+	<header class="solid-bg">
+		<div class="container">
+			<div class="row">
+				<nav class="navbar navbar-default">
+
+						<div class="navbar-header">
+							<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#header-navbar-collapse" aria-expanded="false">
+								<span class="sr-only">Toggle navigation</span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+								<span class="icon-bar"></span>
+							</button>
+							<a class="navbar-brand" href="../../index"><img src="../../img/logo.png" alt="logo" /></a>
+						</div>
+
+						<div class="collapse navbar-collapse" id="header-navbar-collapse">
+							<ul class="nav navbar-nav navbar-right">
+								<li><a href="../../blog">Blog</a></li>
+							</ul>
+						</div>
+
+				</nav>	
+			</div>
+		</div>
+	</header>
+
+    
+<div class="blog-read page">
+    <article class="container">
+    	<div class="row">
+    		<div class="col-sm-12">
+    			<h1>Vim: Key Keys</h1>
+                <div class="meta"><p>
+                    <i class="fa fa-calendar"></i> Published: 9 years ago
+                                            <i class="fa fa-tag"></i> <a href="../tag/web-dev">web dev</a>
+                                              
+                </p></div>
+    		</div>
+    	</div>
+        <div class="row">
+			<div class="col-sm-8 col-sm-offset-2">
+				<p>For better or worse, I am making a significant effort to learn vim. No more shall I reach for the mouse to change some text or add a bracket! Ultimately my goal is not to necessarily stick with vim, but to be familar enough with its shortcuts to be able to switch to vim mode in another editor - perhaps Sublime. Perhaps even Visual Studio Code. Below are my notes on key keys, I plan to add to this as I learn new features of vim. I am also reading <a href="http://vimebook.com">vim for humans</a>, it focuses on making vim usable rather than teaching you the intricies and it is a good read if you want to be productive from the get-go. Along with this I did vimtutor which is a useful primer on vim shortcuts.</p>
+
+				<h2>Navigation</h2>
+<ul>
+<li>
+<p><strong>j</strong>, <strong>k</strong> to navigate lines.</p>
+</li>
+<li>
+<p><strong>h</strong>, <strong>l</strong> to navigate characters.</p>
+</li>
+<li>
+<p><strong>w</strong> next word</p>
+</li>
+<li>
+<p><strong>b</strong> previous word</p>
+</li>
+<li>
+<p><strong>e</strong> end of word</p>
+</li>
+<li>
+<p><strong>%</strong> matching brace</p>
+</li>
+<li>
+<p><strong>gg</strong> top of document</p>
+</li>
+<li>
+<p><strong>G</strong> bottom of document</p>
+</li>
+<li>
+<p><strong>123G</strong> go to line 123</p>
+</li>
+<li>
+<p><strong>CTRL + b</strong> page up</p>
+</li>
+<li>
+<p><strong>CTRL + f</strong> page down</p>
+</li>
+</ul>
+<h2>Insert Modes</h2>
+<ul>
+<li>
+<strong>i</strong> to enter insert mode</li>
+<li>
+<strong>a</strong> to enter append after current character</li>
+<li>
+<strong>A</strong> to enter append at end of line</li>
+</ul>
+<h2>Deletion</h2>
+<ul>
+<li>
+<strong>dd</strong> delete line</li>
+<li>
+<strong>x</strong> delete character</li>
+</ul>
+<h2>Replacement</h2>
+<ul>
+<li>
+<strong>r[c]</strong> to replace current character with [c]</li>
+<li>
+<strong>R[c]</strong> to replace multiple characters with [c]</li>
+</ul>
+<h2>Search</h2>
+<ul>
+<li>
+<p><strong>/searchtext</strong> to search forwards</p>
+</li>
+<li>
+<p><strong>?searchtext</strong> to search backwords</p>
+</li>
+<li>
+<p><strong>n</strong> to go to next item</p>
+</li>
+<li>
+<p><strong>:nc</strong> command to turn off case sensitivity</p>
+</li>
+</ul>
+<h2>Undo and Redo</h2>
+<ul>
+<li>
+<strong>u</strong> to undo the last command</li>
+<li>
+<strong>U</strong> to undo all changes to line</li>
+<li>
+<strong>CTRL + r</strong> to redo</li>
+</ul>
+<h2>Copy and Paste</h2>
+<ul>
+<li>
+<strong>y</strong> for yank/copy</li>
+<li>
+<strong>p</strong> for put/paste</li>
+<li>
+<strong>v</strong> for visual selection</li>
+</ul>
+<h2>Misc</h2>
+<ul>
+<li>
+<strong>CTRL + W</strong>, then <strong>W</strong> to switch windows</li>
+</ul>
+<h2>Saving and quitting</h2>
+<ul>
+<li>
+<strong>:wqa</strong> save, close all windows and quit</li>
+<li>
+<strong>:w</strong> FILE write out to file</li>
+</ul>
+
+				<div class="back"><p><a href="../../blog"><i class="fa fa-arrow-left"></i> Blog list</a></p></div>
+			</div>
+        </div>
+    </article>
+</div>
+
+  
+
+    <footer>
+    	<div class="container">
+
+			<div class="row">
+				<div class="col-md-3 col-sm-6">
+					<h3>About</h3>
+					<p>PlanetCJD is the virtual home of Chris Davis.</p>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Blog</h3>
+					<p>Latest blog posts:</p>
+					<ul>
+													<li><a href="visual-studio-code-devcontainers-for-development-with-laravel-sail"><i class="fa fa-arrow-right"></i> Visual Studio Code devcontainers for development with Laravel Sail</a></li>
+													<li><a href="hyper-v-for-development-machines"><i class="fa fa-arrow-right"></i> Hyper-V for development machines</a></li>
+													<li><a href="building-an-api-part-2"><i class="fa fa-arrow-right"></i> Building an API - Part 2</a></li>
+											</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Other Sites</h3>
+					<p>Other sites to find me on:</p>
+					<ul>
+						<li><a href="https://github.com/cjd118"><i class="fa fa-arrow-right"></i> GitHub</a></li>					
+						<li><a href="http://codecanyon.net/?ref=planetcjd"><i class="fa fa-arrow-right"></i> CodeCanyon</a></li>
+					</ul>
+				</div>
+				<div class="col-md-3 col-sm-6">
+					<h3>Contact</h3>
+					<p>You can get in touch by:</p>
+					<ul>
+						<li><a href="../../index.html#contact"><i class="fa fa-commenting"></i> Contact Form</a></li>
+						<!-- <li><a href="#">Email</a></li> -->
+					</ul>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="copyright">
+						<small>Copyright &copy;2026 planetcjd.co.uk</small>
+					</div>
+				</div>
+			</div>
+    	</div>
+    </footer>  	
+
+    <script src="../../js/scripts.js"></script>
+    
+    </body>
+</html>
